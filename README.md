@@ -127,17 +127,11 @@ mongodb-persistent-storage-claim-mongod-2   Bound     pvc-c7948f87-319a-11e8-8dd
 
 Finally, we need to connect to one of the “mongod” container processes to configure the replica set.
 
-Run the following command to connect to the first container:
+Run the following command to connect to the first container. In the shell initiate the replica set (we can rely on the hostnames always being the same, due to having employed a StatefulSet):
 
 ```console
 $ kubectl exec -it mongod-0 -c mongod-container bash
-
 $ mongo
-```
-
-In the shell run the following command to initiate the replica set (we can rely on the hostnames always being the same, due to having employed a StatefulSet):
-
-```console
 > rs.initiate({_id: "MainRepSet", version: 1, members: [
        { _id: 0, host : "mongod-0.mongodb-service.default.svc.cluster.local:27017" },
        { _id: 1, host : "mongod-1.mongodb-service.default.svc.cluster.local:27017" },
@@ -145,7 +139,7 @@ In the shell run the following command to initiate the replica set (we can rely 
  ]});
 ```
 
-Keep checking the status of the replica set, with the following command, until you see that the replica set is fully initialised and a primary and two secondaries are present:
+Keep checking the status of the replica set, with the following command, until the replica set is fully initialised and a primary and two secondaries are present:
 
 ```console
 > rs.status();
