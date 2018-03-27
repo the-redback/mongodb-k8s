@@ -1,4 +1,4 @@
-# mongodb-kubernetes
+# MongoDB in Kubernetes
 
 ## Replica-Sets
 
