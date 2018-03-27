@@ -131,13 +131,7 @@ Run the following command to connect to the first container:
 
 ```console
 $ kubectl exec -it mongod-0 -c mongod-container bash
-```
 
-This will place you into a command line shell directly in the container.
-
-Connect to the local “mongod” process using the Mongo Shell and authorize the user
-
-```console
 $ mongo
 ```
 
