@@ -30,13 +30,18 @@ spec:
   selector:
     role: mongo
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mongod
 spec:
   serviceName: mongodb-service
   replicas: 3
+  selector:
+    matchLabels:
+      role: mongo
+      environment: test
+      replicaset: MainRepSet
   template:
     metadata:
       labels:
@@ -62,11 +67,6 @@ spec:
         - "/etc/secrets-volume/internal-auth-mongodb-keyfile"
         - "--setParameter"
         - "authenticationMechanisms=SCRAM-SHA-1"
-        env:
-        - name: "MONGO_INITDB_ROOT_USERNAME"
-          value: "root"
-        - name: "MONGO_INITDB_ROOT_PASSWORD"
-          value: "root"
         resources:
           requests:
             cpu: 0.2
@@ -261,6 +261,8 @@ Then run the following command to configure an “admin” user (performing this
 
 ### Insert Data
 
+Insert Data into `mongod-0` pod.
+
 ```console
 > db.getSiblingDB('admin').auth("main_admin", "abc123");
 > use test;
@@ -271,7 +273,8 @@ Then run the following command to configure an “admin” user (performing this
 
 ### Verify Cluster Data
 
-Exec into Secondary Pod (here, mongo-1)
+`exec` into Secondary Pod (here, mongo-1)
+
 ```console
 $ kubectl exec -it mongod-1 -c mongod-container bash
 $ mongo
@@ -287,7 +290,7 @@ $ mongo
 $ kubectl delete -f ./replica-sets/mongodb-rc.yaml
 $ kubectl get all
 $ kubectl get persistentvolumes
-$ kubectl apply -f mongodb-service.yaml
+$ kubectl apply -f ./replica-sets/mongodb-rc.yaml
 $ kubectl get all
 ```
 
