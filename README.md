@@ -278,11 +278,16 @@ $ mongo
 $ kubectl delete -f ./replica-sets/mongodb-rc.yaml
 $ kubectl get all
 $ kubectl get persistentvolumes
+```
+
+Recreate MongoDB
+
+```console
 $ kubectl apply -f ./replica-sets/mongodb-rc.yaml
 $ kubectl get all
 ```
 
-Recreate MongoDB
+Verify Data:
 
 ```console
 $ kubectl exec -it mongod-0 -c mongod-container bash
