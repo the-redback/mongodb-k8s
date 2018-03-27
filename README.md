@@ -138,10 +138,7 @@ This will place you into a command line shell directly in the container.
 Connect to the local “mongod” process using the Mongo Shell and authorize the user
 
 ```console
-$ mongo admin
-MongoDB shell version v3.4.14
-connecting to: mongodb://127.0.0.1:27017/admin
-MongoDB server version: 3.4.14
+$ mongo
 ```
 
 In the shell run the following command to initiate the replica set (we can rely on the hostnames always being the same, due to having employed a StatefulSet):
@@ -159,7 +156,7 @@ Keep checking the status of the replica set, with the following command, until y
 ```console
 > rs.status();
 
-# output:
+# output similar to:
 {
 	"set" : "MainRepSet",
 	"date" : ISODate("2018-03-27T12:11:31.577Z"),
@@ -250,6 +247,8 @@ Keep checking the status of the replica set, with the following command, until y
 }
 ```
 
+`mongodb-0` has become `Primary` and Others two `Secondary` Nodes.
+
 Then run the following command to configure an “admin” user (performing this action results in the “localhost exception” being automatically and permanently disabled):
 
 ```console
@@ -303,3 +302,7 @@ $ mongo
 ```
 
 As PVC was not deleted, We will still have existing Data.
+
+### Verify Clusterization
+
+Delete `mongod-0` Pod and keep cheking `rs.status()`, eventually another node of the remaining two will become `Primary` Node.
