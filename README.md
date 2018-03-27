@@ -8,6 +8,7 @@ MongoDB will use this key to communicate internal cluster.
 
 ```console
 $ openssl rand -base64 741 > ./replica-sets/key.txt
+
 $ kubectl create secret generic shared-bootstrap-data --from-file=internal-auth-mongodb-keyfile=./replica-sets/key.txt
 secret "shared-bootstrap-data" created
 ```
@@ -130,7 +131,6 @@ Run the following command to connect to the first container:
 
 ```console
 $ kubectl exec -it mongod-0 -c mongod-container bash
-root@mongod-0:/# 
 ```
 
 This will place you into a command line shell directly in the container.
@@ -138,12 +138,10 @@ This will place you into a command line shell directly in the container.
 Connect to the local “mongod” process using the Mongo Shell and authorize the user
 
 ```console
-root@mongod-0:/# mongo admin
+$ mongo admin
 MongoDB shell version v3.4.14
 connecting to: mongodb://127.0.0.1:27017/admin
 MongoDB server version: 3.4.14
-
-
 ```
 
 In the shell run the following command to initiate the replica set (we can rely on the hostnames always being the same, due to having employed a StatefulSet):
@@ -161,6 +159,95 @@ Keep checking the status of the replica set, with the following command, until y
 ```console
 > rs.status();
 
+# output:
+{
+	"set" : "MainRepSet",
+	"date" : ISODate("2018-03-27T12:11:31.577Z"),
+	"myState" : 2,
+	"term" : NumberLong(1),
+	"syncingTo" : "mongod-2.mongodb-service.default.svc.cluster.local:27017",
+	"heartbeatIntervalMillis" : NumberLong(2000),
+	"optimes" : {
+		"lastCommittedOpTime" : {
+			"ts" : Timestamp(1522152676, 1),
+			"t" : NumberLong(1)
+		},
+		"appliedOpTime" : {
+			"ts" : Timestamp(1522152686, 1),
+			"t" : NumberLong(1)
+		},
+		"durableOpTime" : {
+			"ts" : Timestamp(1522152686, 1),
+			"t" : NumberLong(1)
+		}
+	},
+	"members" : [
+		{
+			"_id" : 0,
+			"name" : "mongod-0.mongodb-service.default.svc.cluster.local:27017",
+			"health" : 1,
+			"state" : 1,
+			"stateStr" : "PRIMARY",
+			"uptime" : 399,
+			"optime" : {
+				"ts" : Timestamp(1522152686, 1),
+				"t" : NumberLong(1)
+			},
+			"optimeDurable" : {
+				"ts" : Timestamp(1522152686, 1),
+				"t" : NumberLong(1)
+			},
+			"optimeDate" : ISODate("2018-03-27T12:11:26Z"),
+			"optimeDurableDate" : ISODate("2018-03-27T12:11:26Z"),
+			"lastHeartbeat" : ISODate("2018-03-27T12:11:30.360Z"),
+			"lastHeartbeatRecv" : ISODate("2018-03-27T12:11:30.697Z"),
+			"pingMs" : NumberLong(0),
+			"electionTime" : Timestamp(1522152306, 1),
+			"electionDate" : ISODate("2018-03-27T12:05:06Z"),
+			"configVersion" : 1
+		},
+		{
+			"_id" : 1,
+			"name" : "mongod-1.mongodb-service.default.svc.cluster.local:27017",
+			"health" : 1,
+			"state" : 2,
+			"stateStr" : "SECONDARY",
+			"uptime" : 505,
+			"optime" : {
+				"ts" : Timestamp(1522152686, 1),
+				"t" : NumberLong(1)
+			},
+			"optimeDate" : ISODate("2018-03-27T12:11:26Z"),
+			"syncingTo" : "mongod-2.mongodb-service.default.svc.cluster.local:27017",
+			"configVersion" : 1,
+			"self" : true
+		},
+		{
+			"_id" : 2,
+			"name" : "mongod-2.mongodb-service.default.svc.cluster.local:27017",
+			"health" : 1,
+			"state" : 2,
+			"stateStr" : "SECONDARY",
+			"uptime" : 399,
+			"optime" : {
+				"ts" : Timestamp(1522152686, 1),
+				"t" : NumberLong(1)
+			},
+			"optimeDurable" : {
+				"ts" : Timestamp(1522152686, 1),
+				"t" : NumberLong(1)
+			},
+			"optimeDate" : ISODate("2018-03-27T12:11:26Z"),
+			"optimeDurableDate" : ISODate("2018-03-27T12:11:26Z"),
+			"lastHeartbeat" : ISODate("2018-03-27T12:11:30.360Z"),
+			"lastHeartbeatRecv" : ISODate("2018-03-27T12:11:29.915Z"),
+			"pingMs" : NumberLong(0),
+			"syncingTo" : "mongod-0.mongodb-service.default.svc.cluster.local:27017",
+			"configVersion" : 1
+		}
+	],
+	"ok" : 1
+}
 ```
 
 Then run the following command to configure an “admin” user (performing this action results in the “localhost exception” being automatically and permanently disabled):
@@ -185,6 +272,7 @@ Then run the following command to configure an “admin” user (performing this
 
 ### Verify Cluster Data
 
+Exec into Secondary Pod (here, mongo-1)
 ```console
 $ kubectl exec -it mongod-1 -c mongod-container bash
 $ mongo
@@ -197,8 +285,7 @@ $ mongo
 ### Verify PVC
 
 ```console
-$ kubectl delete statefulsets mongodb-statefulset
-$ kubectl delete services mongodb-service
+$ kubectl delete -f ./replica-sets/mongodb-rc.yaml
 $ kubectl get all
 $ kubectl get persistentvolumes
 $ kubectl apply -f mongodb-service.yaml
@@ -214,3 +301,5 @@ $ mongo
 > use test;
 > db.testcoll.find();
 ```
+
+As PVC was not deleted, We will still have existing Data.
