@@ -33,12 +33,23 @@ spec:
         environment: test
         replicaset: MainRepSet
     spec:
+      initContainers:
+      - name: init
+        image: busybox
+        command:
+          - "sh"
+          - "-c"
+          - |
+            addgroup -S mongodb && adduser -S -g mongodb mongodb
+            chown -R mongodb:mongodb /var/secrets/shared-bootstrap-data
+            chmod 600 /var/secrets/shared-bootstrap-data
+        volumeMounts:
+        - name: shared-bootstrap-data
+          mountPath: /var/secrets/shared-bootstrap-data
       containers:
       - name: mongod-container
-        image: mongo:3.4
-        command:
-        - "numactl"
-        - "--interleave=all"
+        image: mongo:3.6
+        args:
         - "mongod"
         - "--bind_ip"
         - "0.0.0.0"
@@ -48,26 +59,32 @@ spec:
         - "--clusterAuthMode"
         - "keyFile"
         - "--keyFile"
-        - "/etc/secrets-volume/internal-auth-mongodb-keyfile"
+        - "/var/secrets/shared-bootstrap-data/internal-auth-mongodb-keyfile"
         - "--setParameter"
         - "authenticationMechanisms=SCRAM-SHA-1"
+        env:
+        - name: "MONGO_INITDB_ROOT_USERNAME"
+          value: "root"
+        - name: "MONGO_INITDB_ROOT_PASSWORD"
+          value: "password"
         resources:
           requests:
-            cpu: 0.2
-            memory: 200Mi
+            cpu: 100m
+            memory: 100Mi
         ports:
         - containerPort: 27017
         volumeMounts:
-        - name: secrets-volume
-          readOnly: true
-          mountPath: /etc/secrets-volume
+        - name: shared-bootstrap-data
+          mountPath: /var/secrets/shared-bootstrap-data
         - name: mongodb-persistent-storage-claim
           mountPath: /data/db
+        securityContext:
+          runAsUser: 0
       volumes:
-      - name: secrets-volume
+      - name: shared-bootstrap-data
         secret:
           secretName: shared-bootstrap-data
-          defaultMode: 256
+       # defaultMode: 511 #ocatl bits: 700
   volumeClaimTemplates:
   - metadata:
       name: mongodb-persistent-storage-claim

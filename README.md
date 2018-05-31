@@ -9,7 +9,7 @@ MongoDB will use this key to communicate internal cluster.
 ```console
 $ openssl rand -base64 741 > ./replica-sets/key.txt
 
-$ kubectl create secret generic shared-bootstrap-data --from-file=internal-auth-mongodb-keyfile=./replica-sets/key.txt
+$ kubectl create secret generic shared-bootstrap-data -n demo --from-file=internal-auth-mongodb-keyfile=./replica-sets/key.txt
 secret "shared-bootstrap-data" created
 ```
 

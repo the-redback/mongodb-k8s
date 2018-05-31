@@ -1,0 +1,186 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: 2018-05-31T07:18:49Z
+  generation: 1
+  labels:
+    app: mongodb-replicaset
+    chart: mongodb-replicaset-3.4.1
+    heritage: Tiller
+    release: my-release
+  name: my-release-mongodb-replicaset
+  namespace: default
+  resourceVersion: "10232"
+  selfLink: /apis/apps/v1/namespaces/default/statefulsets/my-release-mongodb-replicaset
+  uid: dd373470-64a2-11e8-a4c8-0800273a9410
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: mongodb-replicaset
+      release: my-release
+  serviceName: my-release-mongodb-replicaset
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mongodb-replicaset
+        release: my-release
+    spec:
+      containers:
+      - args:
+        - --config=/data/configdb/mongod.conf
+        - --dbpath=/data/db
+        - --replSet=rs0
+        - --port=27017
+        - --bind_ip=0.0.0.0
+        command:
+        - mongod
+        image: mongo:3.6
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - db.adminCommand('ping')
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: mongodb-replicaset
+        ports:
+        - containerPort: 27017
+          name: peer
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - db.adminCommand('ping')
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /data/db
+          name: datadir
+        - mountPath: /data/configdb
+          name: configdir
+        - mountPath: /work-dir
+          name: workdir
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - args:
+        - -c
+        - |
+          set -e
+          set -x
+
+          cp /configdb-readonly/mongod.conf /data/configdb/mongod.conf
+        command:
+        - sh
+        image: busybox
+        imagePullPolicy: Always
+        name: copy-config
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+        - mountPath: /configdb-readonly
+          name: config
+        - mountPath: /data/configdb
+          name: configdir
+      - args:
+        - --work-dir=/work-dir
+        image: k8s.gcr.io/mongodb-install:0.6
+        imagePullPolicy: IfNotPresent
+        name: install
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+      - args:
+        - -on-start=/init/on-start.sh
+        - -service=my-release-mongodb-replicaset
+        command:
+        - /work-dir/peer-finder
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: REPLICA_SET
+          value: rs0
+        image: mongo:3.6
+        imagePullPolicy: IfNotPresent
+        name: bootstrap
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+        - mountPath: /init
+          name: init
+        - mountPath: /data/configdb
+          name: configdir
+        - mountPath: /data/db
+          name: datadir
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: my-release-mongodb-replicaset-mongodb
+        name: config
+      - configMap:
+          defaultMode: 493
+          name: my-release-mongodb-replicaset-init
+        name: init
+      - emptyDir: {}
+        name: workdir
+      - emptyDir: {}
+        name: configdir
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+    status:
+      phase: Pending
+status:
+  collisionCount: 0
+  currentReplicas: 2
+  currentRevision: my-release-mongodb-replicaset-c55676c6f
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 2
+  updateRevision: my-release-mongodb-replicaset-c55676c6f
