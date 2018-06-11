@@ -33,33 +33,23 @@ spec:
         environment: test
         replicaset: MainRepSet
     spec:
-      initContainers:
-      - name: init
-        image: busybox
-        command:
-          - "sh"
-          - "-c"
-          - |
-            addgroup -S mongodb && adduser -S -g mongodb mongodb
-            chown -R mongodb:mongodb /var/secrets/shared-bootstrap-data
-            chmod 600 /var/secrets/shared-bootstrap-data
-        volumeMounts:
-        - name: shared-bootstrap-data
-          mountPath: /var/secrets/shared-bootstrap-data
       containers:
       - name: mongod-container
         image: mongo:3.6
         args:
-        - "mongod"
         - "--bind_ip"
         - "0.0.0.0"
         - "--replSet"
         - "MainRepSet"
         - "--auth"
         - "--clusterAuthMode"
-        - "keyFile"
-        - "--keyFile"
-        - "/var/secrets/shared-bootstrap-data/internal-auth-mongodb-keyfile"
+        - "x509"
+        - "--sslMode"
+        - "requireSSL"
+        - "--sslCAFile"
+        - "/var/secrets/shared-bootstrap-data/tls.ca"
+        - "--sslPEMKeyFile"
+        - "/var/secrets/shared-bootstrap-data/tls.pem"
         - "--setParameter"
         - "authenticationMechanisms=SCRAM-SHA-1"
         env:
