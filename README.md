@@ -302,3 +302,8 @@ As PVC was not deleted, We will still have existing Data.
 ### Verify Clusterization
 
 Delete `mongod-0` Pod and keep cheking `rs.status()`, eventually another node of the remaining two will become `Primary` Node.
+
+
+## Using Helm
+
+`$ helm install --name my-release --namespace demo --set auth.enabled=true --set auth.key="asdasdasdasdasdasd" --set auth.adminUser=root --set auth.adminPassword=pass stable/mongodb-replicaset`
