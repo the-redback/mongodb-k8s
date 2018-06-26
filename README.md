@@ -307,3 +307,19 @@ Delete `mongod-0` Pod and keep cheking `rs.status()`, eventually another node of
 ## Using Helm
 
 `$ helm install --name my-release --namespace demo --set auth.enabled=true --set auth.key="asdasdasdasdasdasd" --set auth.adminUser=root --set auth.adminPassword=pass stable/mongodb-replicaset`
+
+
+### mongodump
+
+Hosts: 
+
+- my-release-mongodb-replicaset-0.my-release-mongodb-replicaset.demo.svc.cluster.local:27017
+- my-release-mongodb-replicaset-1.my-release-mongodb-replicaset.demo.svc.cluster.local:27017
+- my-release-mongodb-replicaset-2.my-release-mongodb-replicaset.demo.svc.cluster.local:27017
+
+```console
+$ mongodump --host "rs0/my-release-mongodb-replicaset-0.my-release-mongodb-replicaset.demo.svc.cluster.local:27017,my-release-mongodb-replicaset-1.my-release-mongodb-replicaset.demo.svc.cluster.local:27017,my-release-mongodb-replicaset-2.my-release-mongodb-replicaset.demo.svc.cluster.local:27017" --username "root" --password "pass" --out "/tmp/dump" --readPreference secondary 
+
+# If namespace is same,
+$ mongodump --host "rs0/my-release-mongodb-replicaset-0:27017,my-release-mongodb-replicaset-1:27017,my-release-mongodb-replicaset-2:27017" --username "root" --password "pass" --out "/tmp/dump" --readPreference secondary 
+```
