@@ -322,4 +322,8 @@ $ mongodump --host "rs0/my-release-mongodb-replicaset-0.my-release-mongodb-repli
 
 # If namespace is same,
 $ mongodump --host "rs0/my-release-mongodb-replicaset-0:27017,my-release-mongodb-replicaset-1:27017,my-release-mongodb-replicaset-2:27017" --username "root" --password "pass" --out "/tmp/dump" --readPreference secondary 
+
+# with just service name and without read preference
+$ mongodump --host "rs0/my-release-mongodb-replicaset" --port 27017 --username "root" --password "pass" --out "/tmp/dump"
+
 ```
