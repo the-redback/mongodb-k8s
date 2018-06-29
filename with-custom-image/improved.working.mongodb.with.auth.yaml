@@ -1,4 +1,15 @@
-
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: mongodb-replicaset
+  name: my-release-mongodb-replicaset-mongodb
+  namespace: demo
+data:
+  mongod.conf: |
+    null
+---
 # A headless service to create DNS records
 apiVersion: v1
 kind: Service
@@ -84,20 +95,11 @@ spec:
         - mountPath: /work-dir
           name: workdir
       initContainers:
-      - name: copy-config
-        image: busybox
+      - name: install
+        image: maruftuhin/mongo-init
         imagePullPolicy: Always
-        command:
-        - sh
         args:
-        - -c
-        - |
-          set -e
-          set -x
-
-          cp /configdb-readonly/mongod.conf /data/configdb/mongod.conf
-          cp /keydir-readonly/key.txt /data/configdb/key.txt
-          chmod 600 /data/configdb/key.txt
+        - --work-dir=/work-dir
         volumeMounts:
         - mountPath: /work-dir
           name: workdir
@@ -107,21 +109,30 @@ spec:
           name: configdir
         - mountPath: /keydir-readonly
           name: keydir
-      - name: install
-        image: k8s.gcr.io/mongodb-install:0.6
-        imagePullPolicy: IfNotPresent
-        args:
-        - --work-dir=/work-dir
-        volumeMounts:
-        - mountPath: /work-dir
-          name: workdir
+#      - name: check
+#        image: busybox
+#        command:
+#        - sh
+#        args:
+#        - -c
+#        - |
+#          set -e
+#          set -x
+#
+#          ls -la /work-dir
+#          ls -la /data/configdb
+#        volumeMounts:
+#        - mountPath: /work-dir
+#          name: workdir
+#        - mountPath: /data/configdb
+#          name: configdir
       - name: bootstrap
         image: mongo:3.6
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         command:
         - /work-dir/peer-finder
         args:
-        - -on-start=/init/on-start.sh
+        - -on-start=/work-dir/on-start.sh
         - -service=my-release-mongodb-replicaset
         env:
         - name: POD_NAMESPACE
@@ -133,12 +144,12 @@ spec:
           value: rs0
         - name: AUTH
           value: "true"
-        - name: ADMIN_USER
+        - name: MONGO_INITDB_ROOT_USERNAME
           valueFrom:
             secretKeyRef:
               key: user
               name: my-release-mongodb-replicaset-admin
-        - name: ADMIN_PASSWORD
+        - name: MONGO_INITDB_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
               key: password
@@ -146,8 +157,6 @@ spec:
         volumeMounts:
         - mountPath: /work-dir
           name: workdir
-        - mountPath: /init
-          name: init
         - mountPath: /data/configdb
           name: configdir
         - mountPath: /data/db
@@ -162,11 +171,6 @@ spec:
         configMap:
           defaultMode: 420
           name: my-release-mongodb-replicaset-mongodb
-      - name: init
-        configMap:
-          defaultMode: 493
-          name: my-release-mongodb-replicaset-init
-        name: init
       - name: keydir
         secret:
           defaultMode: 256
