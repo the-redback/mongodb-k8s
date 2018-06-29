@@ -23,6 +23,8 @@ data:
     # See the License for the specific language governing permissions and
     # limitations under the License.
 
+    set -x
+
     replica_set="$REPLICA_SET"
     script_name=${0##*/}
 
