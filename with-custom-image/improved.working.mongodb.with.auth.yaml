@@ -1,0 +1,186 @@
+
+# A headless service to create DNS records
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  labels:
+    app: mongodb-replicaset
+  name: my-release-mongodb-replicaset
+  namespace: demo
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: peer
+      port: 27017
+  selector:
+    app: mongodb-replicaset
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: mongodb-replicaset
+  name: my-release-mongodb-replicaset
+  namespace: demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongodb-replicaset
+  serviceName: my-release-mongodb-replicaset
+  template:
+    metadata:
+      labels:
+        app: mongodb-replicaset
+    spec:
+      containers:
+      - name: mongodb-replicaset
+        image: mongo:3.6
+        imagePullPolicy: IfNotPresent
+        command:
+        - mongod
+        args:
+        - --config=/data/configdb/mongod.conf
+        - --dbpath=/data/db
+        - --replSet=rs0
+        - --port=27017
+        - --bind_ip=0.0.0.0
+        - --auth
+        - --keyFile=/data/configdb/key.txt
+        livenessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - db.adminCommand('ping')
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        ports:
+        - containerPort: 27017
+          name: peer
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - db.adminCommand('ping')
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: /data/db
+          name: datadir
+        - mountPath: /data/configdb
+          name: configdir
+        - mountPath: /work-dir
+          name: workdir
+      initContainers:
+      - name: copy-config
+        image: busybox
+        imagePullPolicy: Always
+        command:
+        - sh
+        args:
+        - -c
+        - |
+          set -e
+          set -x
+
+          cp /configdb-readonly/mongod.conf /data/configdb/mongod.conf
+          cp /keydir-readonly/key.txt /data/configdb/key.txt
+          chmod 600 /data/configdb/key.txt
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+        - mountPath: /configdb-readonly
+          name: config
+        - mountPath: /data/configdb
+          name: configdir
+        - mountPath: /keydir-readonly
+          name: keydir
+      - name: install
+        image: k8s.gcr.io/mongodb-install:0.6
+        imagePullPolicy: IfNotPresent
+        args:
+        - --work-dir=/work-dir
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+      - name: bootstrap
+        image: mongo:3.6
+        imagePullPolicy: IfNotPresent
+        command:
+        - /work-dir/peer-finder
+        args:
+        - -on-start=/init/on-start.sh
+        - -service=my-release-mongodb-replicaset
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: REPLICA_SET
+          value: rs0
+        - name: AUTH
+          value: "true"
+        - name: ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: my-release-mongodb-replicaset-admin
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: my-release-mongodb-replicaset-admin
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+        - mountPath: /init
+          name: init
+        - mountPath: /data/configdb
+          name: configdir
+        - mountPath: /data/db
+          name: datadir
+      securityContext:
+        fsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 420
+          name: my-release-mongodb-replicaset-mongodb
+      - name: init
+        configMap:
+          defaultMode: 493
+          name: my-release-mongodb-replicaset-init
+        name: init
+      - name: keydir
+        secret:
+          defaultMode: 256
+          secretName: my-release-mongodb-replicaset-keyfile
+      - name: workdir
+        emptyDir: {}
+      - name: configdir
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
