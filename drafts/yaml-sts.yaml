@@ -1,81 +1,31 @@
-apiVersion: v1
-kind: Secret
-data:
-  password: cGFzcw==
-  user: cm9vdA==
-metadata:
-  labels:
-    app: mongodb-replicaset
-  name: my-release-mongodb-replicaset-admin
-  namespace: demo
-type: Opaque
----
-apiVersion: v1
-data:
-  key.txt: YXNkYXNkYXNkYXNkYXNkYXNk
-kind: Secret
-metadata:
-  labels:
-    app: mongodb-replicaset
-  name: my-release-mongodb-replicaset-keyfile
-  namespace: demo
-type: Opaqueth
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    app: mongodb-replicaset
-  name: my-release-mongodb-replicaset-mongodb
-  namespace: demo
-data:
-  mongod.conf: |
-    null
----
-# A headless service to create DNS records
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  labels:
-    app: mongodb-replicaset
-  name: my-release-mongodb-replicaset
-  namespace: demo
-spec:
-  type: ClusterIP
-  clusterIP: None
-  ports:
-    - name: peer
-      port: 27017
-  selector:
-    app: mongodb-replicaset
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  creationTimestamp: 2018-07-05T12:05:48Z
+  generation: 1
   labels:
     app: mongodb-replicaset
   name: my-release-mongodb-replicaset
   namespace: demo
+  resourceVersion: "4247"
+  selfLink: /apis/apps/v1/namespaces/demo/statefulsets/my-release-mongodb-replicaset
+  uid: c0d116af-804b-11e8-8799-0800275310ae
 spec:
+  podManagementPolicy: OrderedReady
   replicas: 3
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: mongodb-replicaset
   serviceName: my-release-mongodb-replicaset
   template:
     metadata:
+      creationTimestamp: null
       labels:
         app: mongodb-replicaset
     spec:
       containers:
-      - name: mongodb-replicaset
-        image: mongo:3.6
-        imagePullPolicy: IfNotPresent
-        command:
-        - mongod
-        args:
+      - args:
         - --config=/data/configdb/mongod.conf
         - --dbpath=/data/db
         - --replSet=rs0
@@ -83,6 +33,10 @@ spec:
         - --bind_ip=0.0.0.0
         - --auth
         - --keyFile=/data/configdb/key.txt
+        command:
+        - mongod
+        image: maruftuhin/mongo:3.6
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
             command:
@@ -94,6 +48,7 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 5
+        name: mongodb-replicaset
         ports:
         - containerPort: 27017
           name: peer
@@ -109,6 +64,9 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /data/db
           name: datadir
@@ -116,12 +74,16 @@ spec:
           name: configdir
         - mountPath: /work-dir
           name: workdir
+      dnsPolicy: ClusterFirst
       initContainers:
-      - name: install
+      - args:
+        - --work-dir=/work-dir
         image: maruftuhin/mongo-init
         imagePullPolicy: Always
-        args:
-        - --work-dir=/work-dir
+        name: install
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /work-dir
           name: workdir
@@ -131,31 +93,11 @@ spec:
           name: configdir
         - mountPath: /keydir-readonly
           name: keydir
-#      - name: check
-#        image: busybox
-#        command:
-#        - sh
-#        args:
-#        - -c
-#        - |
-#          set -e
-#          set -x
-#
-#          ls -la /work-dir
-#          ls -la /data/configdb
-#        volumeMounts:
-#        - mountPath: /work-dir
-#          name: workdir
-#        - mountPath: /data/configdb
-#          name: configdir
-      - name: bootstrap
-        image: mongo:3.6
-        imagePullPolicy: Always
-        command:
-        - /work-dir/peer-finder
-        args:
+      - args:
         - -on-start=/work-dir/on-start.sh
         - -service=my-release-mongodb-replicaset
+        command:
+        - /work-dir/peer-finder
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -176,6 +118,12 @@ spec:
             secretKeyRef:
               key: password
               name: my-release-mongodb-replicaset-admin
+        image: maruftuhin/mongo:3.6
+        imagePullPolicy: Always
+        name: bootstrap
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /work-dir
           name: workdir
@@ -183,26 +131,33 @@ spec:
           name: configdir
         - mountPath: /data/db
           name: datadir
+      restartPolicy: Always
+      schedulerName: default-scheduler
       securityContext:
         fsGroup: 999
         runAsNonRoot: true
         runAsUser: 999
       terminationGracePeriodSeconds: 30
       volumes:
-      - name: config
-        configMap:
+      - configMap:
           defaultMode: 420
           name: my-release-mongodb-replicaset-mongodb
+        name: config
       - name: keydir
         secret:
           defaultMode: 256
           secretName: my-release-mongodb-replicaset-keyfile
-      - name: workdir
-        emptyDir: {}
-      - name: configdir
-        emptyDir: {}
+      - emptyDir: {}
+        name: workdir
+      - emptyDir: {}
+        name: configdir
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
+      creationTimestamp: null
       name: datadir
     spec:
       accessModes:
@@ -210,3 +165,13 @@ spec:
       resources:
         requests:
           storage: 1Gi
+    status:
+      phase: Pending
+status:
+  collisionCount: 0
+  currentReplicas: 3
+  currentRevision: my-release-mongodb-replicaset-669f8df9db
+  observedGeneration: 1
+  readyReplicas: 3
+  replicas: 3
+  updateRevision: my-release-mongodb-replicaset-669f8df9db

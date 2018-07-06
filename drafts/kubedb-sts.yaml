@@ -1,0 +1,191 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: 2018-07-05T12:29:21Z
+  generation: 1
+  labels:
+    kubedb.com/kind: MongoDB
+    kubedb.com/name: mgo-rs0
+  name: mgo-rs0
+  namespace: demo
+  ownerReferences:
+  - apiVersion: kubedb.com/v1alpha1
+    blockOwnerDeletion: false
+    kind: MongoDB
+    name: mgo-rs0
+    uid: 09efd15b-804f-11e8-8799-0800275310ae
+  resourceVersion: "5818"
+  selfLink: /apis/apps/v1/namespaces/demo/statefulsets/mgo-rs0
+  uid: 0b685863-804f-11e8-8799-0800275310ae
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      kubedb.com/kind: MongoDB
+      kubedb.com/name: mgo-rs0
+  serviceName: mgo-rs0-gvr-svc
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        kubedb.com/kind: MongoDB
+        kubedb.com/name: mgo-rs0
+    spec:
+      containers:
+      - args:
+        - --auth
+        - --config=/data/configdb/mongod.conf
+        - --port=27017
+        - --replSet=rs0
+        - --bind_ip=0.0.0.0
+        - --keyFile=/data/configdb/key.txt
+        command:
+        - mongod
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: mgo-rs0-auth
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: mgo-rs0-auth
+        image: maruftuhin/mongo:3.6
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - db.adminCommand('ping')
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: mongodb
+        ports:
+        - containerPort: 27017
+          name: db
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - db.adminCommand('ping')
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /data/db
+          name: datadir
+        - mountPath: /data/configdb
+          name: config
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - args:
+        - --work-dir=/work-dir
+        image: maruftuhin/mongo-init
+        imagePullPolicy: Always
+        name: install
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+        - mountPath: /configdb-readonly
+          name: configdir
+        - mountPath: /data/configdb
+          name: config
+        - mountPath: /keydir-readonly
+          name: keydir
+      - args:
+        - -on-start=/work-dir/on-start.sh
+        - -service=mgo-rs0-gvr-svc
+        command:
+        - /work-dir/peer-finder
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: REPLICA_SET
+          value: rs0
+        - name: AUTH
+          value: "true"
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: user
+              name: mgo-rs0-auth
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: mgo-rs0-auth
+        image: maruftuhin/mongo:3.6
+        imagePullPolicy: Always
+        name: bootstrap
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /work-dir
+          name: workdir
+        - mountPath: /data/configdb
+          name: config
+        - mountPath: /data/db
+          name: datadir
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        fsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: mgo-rs0-conf
+        name: configdir
+      - emptyDir: {}
+        name: workdir
+      - emptyDir: {}
+        name: config
+      - name: keydir
+        secret:
+          defaultMode: 256
+          secretName: mgo-rs0-keyfile
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+    status:
+      phase: Pending
+status:
+  collisionCount: 0
+  currentReplicas: 1
+  currentRevision: mgo-rs0-67fd94988b
+  observedGeneration: 1
+  replicas: 1
+  updateRevision: mgo-rs0-67fd94988b
