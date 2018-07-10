@@ -306,7 +306,12 @@ Delete `mongod-0` Pod and keep cheking `rs.status()`, eventually another node of
 
 ## Using Helm
 
-`$ helm install --name my-release --namespace demo --set auth.enabled=true --set auth.key="asdasdasdasdasdasd" --set auth.adminUser=root --set auth.adminPassword=pass stable/mongodb-replicaset`
+Add repo
+
+```console
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+$ helm install --name my-release --namespace demo --set auth.enabled=true --set auth.key="asdasdasdasdasdasd" --set auth.adminUser=root --set auth.adminPassword=pass stable/mongodb-replicaset
+```
 
 
 ### mongodump
