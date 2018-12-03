@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 # ref: https://github.com/kubernetes/charts/blob/master/stable/mongodb-replicaset/init/on-start.sh
 
@@ -6,27 +7,30 @@ replica_set="$REPLICA_SET"
 script_name=${0##*/}
 
 if [[ "$AUTH" == "true" ]]; then
-    admin_user="$MONGO_INITDB_ROOT_USERNAME"
-    admin_password="$MONGO_INITDB_ROOT_PASSWORD"
-    admin_creds=(-u "$admin_user" -p "$admin_password")
-    auth_args=(--auth --keyFile=/data/configdb/key.txt)
+  admin_user="$MONGO_INITDB_ROOT_USERNAME"
+  admin_password="$MONGO_INITDB_ROOT_PASSWORD"
+  admin_creds=(-u "$admin_user" -p "$admin_password")
+fi
+
+if [[ -f /data/configdb/key.txt ]]; then
+  clusterAuthMode=(--clusterAuthMode keyfile --auth --keyFile=/data/configdb/key.txt)
 fi
 
 function log() {
-    local msg="$1"
-    local timestamp
-    timestamp=$(date --iso-8601=ns)
-    echo "[$timestamp] [$script_name] $msg" >> /work-dir/log.txt
+  local msg="$@"
+  local timestamp
+  timestamp=$(date --iso-8601=ns)
+  echo "[$timestamp] [$script_name] $msg" >>/work-dir/log.txt
 }
 
 function shutdown_mongo() {
-    if [[ $# -eq 1 ]]; then
-        args="timeoutSecs: $1"
-    else
-        args='force: true'
-    fi
-    log "Shutting down MongoDB ($args)..."
-    mongo admin "${admin_creds[@]}" "${ssl_args[@]}" --eval "db.shutdownServer({$args})"
+  if [[ $# -eq 1 ]]; then
+    args="timeoutSecs: $1"
+  else
+    args='force: true'
+  fi
+  log "Shutting down MongoDB ($args)..."
+  mongo admin "${admin_creds[@]}" "${ssl_args[@]}" --eval "db.shutdownServer({$args})"
 }
 
 my_hostname=$(hostname)
@@ -34,22 +38,23 @@ log "Bootstrapping MongoDB replica set member: $my_hostname"
 
 log "Reading standard input..."
 while read -ra line; do
-    if [[ "${line}" == *"${my_hostname}"* ]]; then
-        service_name="$line"
-        continue
-    fi
-    peers=("${peers[@]}" "$line")
+  if [[ "${line}" == *"${my_hostname}"* ]]; then
+    service_name="$line"
+    continue
+  fi
+  peers=("${peers[@]}" "$line")
 done
 
 # Generate the ca cert
 ca_crt=/data/configdb/tls.crt
-if [ -f "$ca_crt"  ]; then
-    log "Generating certificate"
-    ca_key=/data/configdb/tls.key
-    pem=/work-dir/mongo.pem
-    ssl_args=(--ssl --sslCAFile "$ca_crt" --sslPEMKeyFile "$pem")
+if [ -f "$ca_crt" ]; then
+  log "Generating certificate"
+  ca_key=/data/configdb/tls.key
+  pem=/work-dir/mongo.pem
+  ssl_args=(--ssl --sslCAFile "$ca_crt" --sslPEMKeyFile "$pem")
+  clusterAuthMode=(--clusterAuthMode x509 --sslMode requireSSL --sslCAFile "$ca_crt" --sslPEMKeyFile "$pem")
 
-cat >openssl.cnf <<EOL
+  cat >openssl.cnf <<EOL
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -66,74 +71,76 @@ DNS.4 = localhost
 DNS.5 = 127.0.0.1
 EOL
 
-    # Generate the certs
-    openssl genrsa -out mongo.key 2048
-    openssl req -new -key mongo.key -out mongo.csr -subj "/CN=$my_hostname" -config openssl.cnf
-    openssl x509 -req -in mongo.csr \
-        -CA "$ca_crt" -CAkey "$ca_key" -CAcreateserial \
-        -out mongo.crt -days 3650 -extensions v3_req -extfile openssl.cnf
+  # Generate the certs
+  openssl genrsa -out mongo.key 2048
+  openssl req -new -key mongo.key -out mongo.csr -subj "/CN=$my_hostname" -config openssl.cnf
+  openssl x509 -req -in mongo.csr \
+    -CA "$ca_crt" -CAkey "$ca_key" -CAcreateserial \
+    -out mongo.crt -days 3650 -extensions v3_req -extfile openssl.cnf
 
-    rm mongo.csr
-    cat mongo.crt mongo.key > $pem
-    rm mongo.key mongo.crt
+  rm mongo.csr
+  cat mongo.crt mongo.key >$pem
+  rm mongo.key mongo.crt
 fi
-
 
 log "Peers: ${peers[*]}"
 
 log "Starting a MongoDB instance..."
-mongod --config /data/configdb/mongod.conf --dbpath=/data/db --replSet="$replica_set" --port=27017 "${auth_args[@]}" --bind_ip=0.0.0.0 >> /work-dir/log.txt 2>&1 &
+log ">>>>>>>>>>>>"
+log "${clusterAuthMode[@]}"
+log `mongod --config /data/configdb/mongod.conf --dbpath=/data/db --replSet=$replica_set --port=27017 "${clusterAuthMode[@]}" --bind_ip=0.0.0.0`
+mongod --config /data/configdb/mongod.conf --dbpath=/data/db --replSet="$replica_set" --port=27017 "${clusterAuthMode[@]}" --bind_ip=0.0.0.0 >>/work-dir/log.txt 2>&1 &
 
 log "Waiting for MongoDB to be ready..."
 until mongo "${ssl_args[@]}" --eval "db.adminCommand('ping')"; do
-    log "Retrying..."
-    sleep 2
+  log "Retrying..."
+  sleep 2
 done
 
 log "Initialized."
 
 # try to find a master and add yourself to its replica set.
 for peer in "${peers[@]}"; do
-    if mongo admin --host "$peer" "${admin_creds[@]}" "${ssl_args[@]}" --eval "rs.isMaster()" | grep '"ismaster" : true'; then
-        log "Found master: $peer"
-        log "Adding myself ($service_name) to replica set..."
-        mongo admin --host "$peer" "${admin_creds[@]}" "${ssl_args[@]}" --eval "rs.add('$service_name')"
+  if mongo admin --host "$peer" "${admin_creds[@]}" "${ssl_args[@]}" --eval "rs.isMaster()" | grep '"ismaster" : true'; then
+    log "Found master: $peer"
+    log "Adding myself ($service_name) to replica set..."
+    mongo admin --host "$peer" "${admin_creds[@]}" "${ssl_args[@]}" --eval "rs.add('$service_name')"
 
-        sleep 3
+    sleep 3
 
-        log 'Waiting for replica to reach SECONDARY state...'
-        until printf '.'  && [[ $(mongo admin "${admin_creds[@]}" "${ssl_args[@]}" --quiet --eval "rs.status().myState") == '2' ]]; do
-            sleep 1
-        done
+    log 'Waiting for replica to reach SECONDARY state...'
+    until printf '.' && [[ $(mongo admin "${admin_creds[@]}" "${ssl_args[@]}" --quiet --eval "rs.status().myState") == '2' ]]; do
+      sleep 1
+    done
 
-        log '✓ Replica reached SECONDARY state.'
+    log '✓ Replica reached SECONDARY state.'
 
-        shutdown_mongo "60"
-        log "Good bye."
-        exit 0
-    fi
+    shutdown_mongo "60"
+    log "Good bye."
+    exit 0
+  fi
 done
 
 # else initiate a replica set with yourself.
 if mongo "${ssl_args[@]}" --eval "rs.status()" | grep "no replset config has been received"; then
-    log "Initiating a new replica set with myself ($service_name)..."
-    mongo "${ssl_args[@]}" --eval "rs.initiate({'_id': '$replica_set', 'members': [{'_id': 0, 'host': '$service_name'}]})"
+  log "Initiating a new replica set with myself ($service_name)..."
+  mongo "${ssl_args[@]}" --eval "rs.initiate({'_id': '$replica_set', 'members': [{'_id': 0, 'host': '$service_name'}]})"
 
-    sleep 3
+  sleep 3
 
-    log 'Waiting for replica to reach PRIMARY state...'
-    until printf '.'  && [[ $(mongo "${ssl_args[@]}" --quiet --eval "rs.status().myState") == '1' ]]; do
-        sleep 1
-    done
+  log 'Waiting for replica to reach PRIMARY state...'
+  until printf '.' && [[ $(mongo "${ssl_args[@]}" --quiet --eval "rs.status().myState") == '1' ]]; do
+    sleep 1
+  done
 
-    log '✓ Replica reached PRIMARY state.'
+  log '✓ Replica reached PRIMARY state.'
 
-    if [[ "$AUTH" == "true" ]]; then
-        log "Creating admin user..."
-        mongo admin "${ssl_args[@]}" --eval "db.createUser({user: '$admin_user', pwd: '$admin_password', roles: [{role: 'root', db: 'admin'}]})"
-    fi
+  if [[ "$AUTH" == "true" ]]; then
+    log "Creating admin user..."
+    mongo admin "${ssl_args[@]}" --eval "db.createUser({user: '$admin_user', pwd: '$admin_password', roles: [{role: 'root', db: 'admin'}]})"
+  fi
 
-    log "Done."
+  log "Done."
 fi
 
 shutdown_mongo

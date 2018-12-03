@@ -9,17 +9,30 @@ metadata:
   name: my-release-mongodb-replicaset-admin
   namespace: demo
 type: Opaque
+#---
+#apiVersion: v1
+#data:
+#  key.txt: YXNkYXNkYXNkYXNkYXNkYXNk
+#kind: Secret
+#metadata:
+#  labels:
+#    app: mongodb-replicaset
+#  name: my-release-mongodb-replicaset-keyfile
+#  namespace: demo
+#type: Opaqueth
 ---
 apiVersion: v1
 data:
-  key.txt: YXNkYXNkYXNkYXNkYXNkYXNk
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURBRENDQWVpZ0F3SUJBZ0lKQUlPVDM0NUZ4K0ZKTUEwR0NTcUdTSWIzRFFFQkN3VUFNQlV4RXpBUkJnTlYKQkFNTUNtdDFZbVZrWWk1amIyMHdIaGNOTVRneE1qQXpNRFEwT1RBM1doY05ORFl3TkRJd01EUTBPVEEzV2pBVgpNUk13RVFZRFZRUUREQXByZFdKbFpHSXVZMjl0TUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCCkNnS0NBUUVBdUx3WlRsTHRGV2w3akxVY0hWOHNJR05ldTA4dlQ4Uk9lT3BjZUdDRlFGNHRJYjNuZ2VWQXU0TU8KTmxHTjNDNXoyS2NyYTJ3Si93SllWcXVmS25KdGV6Z3RTWGtTdXpwd2cwRldmYjh6cWlKbDBFVDRlVjN5UzJ2aApZNGpaLzVXaEVJQXppTnJaRWpGaUprWU8ySGNTR1JWMXNyS2l0ZEFydVdlYjR4MjJZZ1lvYVdJLzFOMlVEQkx1CnFsTUFad0tGUXd4UE1yZHdhaDNhdmN1VGRyaW1lTTN6K1QzUU8rV2hPR1FPZEd4dDZ5MDNjRURzNFNiVWNaQVkKcE1HMms2ZUFUWlJ6WUFXaDRDQWtBZTJ6cVhpMEZneEFiRmdZbENNMm5kNlNwdGVyQjdrczhpN0lmbHlUMzlFcgo5ZEF4dWdSS213RXFsNnh3bnU1K3drNnVweE50TFFJREFRQUJvMU13VVRBZEJnTlZIUTRFRmdRVVBVOW0wYXlQCmVTNTUwMzZkbXNyYlVGRkt1Rk13SHdZRFZSMGpCQmd3Rm9BVVBVOW0wYXlQZVM1NTAzNmRtc3JiVUZGS3VGTXcKRHdZRFZSMFRBUUgvQkFVd0F3RUIvekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBYUtyU3pZZ2djUmhDS21vMgpnU3pidnVHVkdCdlVRdHZucDh4MVRzZzhZa0dQSmZPaUl5UGl3RmtVeDIrYWw1MWRoSFVqOFpJWlZoTmRjdUxBCmR2NUZUamdORTNNYmVCWU81OWpGT3FkNVlFc0ovWjFaUUVuTDJJR3hpMm82b0M4dDlxZEphZXpienR5eGJqSnQKbGpkaXVxNEF3MmVra1R6WXdQVnFmNGJXZm40ZlNMYWRlR09Wd3RhTFNoM3J2Q1JVYXVEei9YS09UeHpJUDlIZwp6ZDBSQXkyZFhnQ0FCbjU0Qll3VklIQm1Mc3JsOGNaOUJzd3A5eGo0NXI4RnorNlplcm5NcU5GR2Q2ZEJoV3pXCk01ZWVQcEw2dnhPV1RrT0pHQStzS0JKTUxacm9JUm5vVDRiOUNrdmVTN2c2ZUlneGJmL3pWdFZwSUM5ZmVVcmYKaG9nVVJ3PT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBdUx3WlRsTHRGV2w3akxVY0hWOHNJR05ldTA4dlQ4Uk9lT3BjZUdDRlFGNHRJYjNuCmdlVkF1NE1PTmxHTjNDNXoyS2NyYTJ3Si93SllWcXVmS25KdGV6Z3RTWGtTdXpwd2cwRldmYjh6cWlKbDBFVDQKZVYzeVMydmhZNGpaLzVXaEVJQXppTnJaRWpGaUprWU8ySGNTR1JWMXNyS2l0ZEFydVdlYjR4MjJZZ1lvYVdJLwoxTjJVREJMdXFsTUFad0tGUXd4UE1yZHdhaDNhdmN1VGRyaW1lTTN6K1QzUU8rV2hPR1FPZEd4dDZ5MDNjRURzCjRTYlVjWkFZcE1HMms2ZUFUWlJ6WUFXaDRDQWtBZTJ6cVhpMEZneEFiRmdZbENNMm5kNlNwdGVyQjdrczhpN0kKZmx5VDM5RXI5ZEF4dWdSS213RXFsNnh3bnU1K3drNnVweE50TFFJREFRQUJBb0lCQUVmMnJueitmUEVNYUY3Rgo1cS9pZFZRZ29iU2lBakkyck1NWnVQQUQyYVRiaXdWTDd6V0EweGk0MHY2Q0FwczFWVmVldDZGZk12MnVNaStCCko3M25XWkxZclh1anVKSkxENjF4OUhtRDFHS0FoOXo4SVRkV1M1N3A1YUZhbkdHZUxtSTVMdG92TnNTSmpFeVEKbWhQbFBwMmE2SUMyYWdBZG1ncmR1N0pienNLY0xiNGtxNzN6bEsrMmNJclBKTzhFQ1hhZ1dwSENkWVNnbzlRLwpOcm9hVGlVemJ2TVBMZnJrbEJuak1XMHFPWkM0WWt1Q0ZGV0NNUXlHcTRCYXlodEtTOU1IVHdhTFpYaWdnQmxzCnZiUGZUVTk0WTZ2d3VDazRjYXlSd09VVnhrR0JSdVRtVktMY1laQjBrMU5PVWVtUE9rRmRjTERndmg3TURJRHcKZytsbzBZRUNnWUVBNXpDZDZvTjRMWmhxV2c0aTB2bm1INWxpcEdrTUwyRTJ1bWRiMjZ4RWlFaHJHTU5INnJWWApPMG02dFE5aDFsNkdqN2lDMm16VktweDltYjVwUmdXT0pUalY4SHRkdjZWRzVuTlJMcG8xZjhhUlRjTXdOK2d4CmI1WVdCb3ZCMWxVSkVVcEx1Q2x4S1pXS3NVVmZrdGFPUnZuMkd1a2xNVnZOMm54cVFtNjYwNUVDZ1lFQXpJODkKUHJyZkMrUW5wVGtac3RSU3pSUXlKZnZHazNNQzZ2RlpmTWE3cTgwWlVFNVlqbE9TUFIyeWV5UzFmZk14SDZXUgpyQmsrcFZVMGxySFJwWC9CZS85dlFRalp2V2l4dWFNWldZMzFldUF0empmREJWVWUrTnRFYzVJQTlkc2FaUWpoClEzV29zRURKdUdZdUw5TjNRbW95UDNMOXZidU9HNlpKSVN6M3VkMENnWUVBMHNvbkVhMnhJNUYyVm9uUkFwL0wKVEVCa0NoZWxmb1dhaXJhMnNFSVBjbHJsR3Z6aVU0UG45eXl3U1dtdkFPL0tyTHZFd3phNzNWQTF6TG9wN2lnZQpoSjJmb3RZNGtnWTE4T1J2dnBmbjg0cXU3VUhzY3UwSU5mK1lNWHUzenA1VjJDZnZoZ2h6SDBFejVaR2xKSkx2CndwTWg2ME5zSCtiZWVEazhBVHBJcWFFQ2dZQVhKYjVRY3VUNmUzN2crMjBsQjFHM1V5bTVrcHdONDEzWktDWncKTUN6Y2JBRUpUVlJJQnJ6dG5ZYXMyS0tROWd3QkFNTlRMaWdnblZ1dUVjRWZjUzE3MHBQTVVDd1RldDFobkVzcQpEeDVRSVQ0TnI5R3BzTkFvYU9kK0RHOS9ZcVBCK3hkQ2d2WHJ1K2tYckxoZFFSaWxzMDZzVDE3WE1Yb0xOdTNmCml5OGRJUUtCZ0MreUpnZlNVYW1zYkhTVkxicGJmSFVBalNRbWVkRFVRZmpxWWEvUUNEazMrTUs5d3EwVGU4TUgKZldRMHFrQWRjZEFPNnAwbnFSbEhLUi95QnVmYzVQYUxUUzdlUk5aWDJ3REdOeFNnU3drZWpWYzRMSlJXa3pmdgpzSWZTdjlYejJIME5MTFhDR05kRzF0cmc5NklVeGcvZ0tJN05DRjd2M0I5dUlZWnlyNjJhCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
 kind: Secret
 metadata:
   labels:
     app: mongodb-replicaset
-  name: my-release-mongodb-replicaset-keyfile
+  name: my-mg
   namespace: demo
-type: Opaqueth
+type: kubernetes.io/tls
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -70,143 +83,175 @@ spec:
         app: mongodb-replicaset
     spec:
       containers:
-      - name: mongodb-replicaset
-        image: mongo:3.6
-        imagePullPolicy: IfNotPresent
-        command:
-        - mongod
-        args:
-        - --config=/data/configdb/mongod.conf
-        - --dbpath=/data/db
-        - --replSet=rs0
-        - --port=27017
-        - --bind_ip=0.0.0.0
-        - --auth
-        - --keyFile=/data/configdb/key.txt
-        livenessProbe:
-          exec:
-            command:
-            - mongo
-            - --eval
-            - db.adminCommand('ping')
-          failureThreshold: 3
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 5
-        ports:
-        - containerPort: 27017
-          name: peer
-          protocol: TCP
-        readinessProbe:
-          exec:
-            command:
-            - mongo
-            - --eval
-            - db.adminCommand('ping')
-          failureThreshold: 3
-          initialDelaySeconds: 5
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        volumeMounts:
-        - mountPath: /data/db
-          name: datadir
-        - mountPath: /data/configdb
-          name: configdir
-        - mountPath: /work-dir
-          name: workdir
+        - name: mongodb-replicaset
+          image: mongo:3.6
+          imagePullPolicy: IfNotPresent
+          command:
+            - mongod
+          args:
+            - --config=/data/configdb/mongod.conf
+            - --dbpath=/data/db
+            - --replSet=rs0
+            - --port=27017
+            - --bind_ip=0.0.0.0
+            - --auth
+            - --sslMode=requireSSL
+            - --sslCAFile=/data/configdb/tls.crt
+            - --sslPEMKeyFile=/work-dir/mongo.pem
+          livenessProbe:
+            exec:
+              command:
+                - mongo
+                - --eval
+                - db.adminCommand('ping')
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          ports:
+            - containerPort: 27017
+              name: peer
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - mongo
+                - --eval
+                - db.adminCommand('ping')
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          volumeMounts:
+            - mountPath: /data/db
+              name: datadir
+            - mountPath: /data/configdb
+              name: configdir
+            - mountPath: /work-dir
+              name: workdir
       initContainers:
-      - name: install
-        image: maruftuhin/mongo-init
-        imagePullPolicy: Always
-        args:
-        - --work-dir=/work-dir
-        volumeMounts:
-        - mountPath: /work-dir
-          name: workdir
-        - mountPath: /configdb-readonly
-          name: config
-        - mountPath: /data/configdb
-          name: configdir
-        - mountPath: /keydir-readonly
-          name: keydir
-#      - name: check
-#        image: busybox
-#        command:
-#        - sh
-#        args:
-#        - -c
-#        - |
-#          set -e
-#          set -x
-#
-#          ls -la /work-dir
-#          ls -la /data/configdb
-#        volumeMounts:
-#        - mountPath: /work-dir
-#          name: workdir
-#        - mountPath: /data/configdb
-#          name: configdir
-      - name: bootstrap
-        image: mongo:3.6
-        imagePullPolicy: Always
-        command:
-        - /work-dir/peer-finder
-        args:
-        - -on-start=/work-dir/on-start.sh
-        - -service=my-release-mongodb-replicaset
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: REPLICA_SET
-          value: rs0
-        - name: AUTH
-          value: "true"
-        - name: MONGO_INITDB_ROOT_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: user
-              name: my-release-mongodb-replicaset-admin
-        - name: MONGO_INITDB_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: my-release-mongodb-replicaset-admin
-        volumeMounts:
-        - mountPath: /work-dir
-          name: workdir
-        - mountPath: /data/configdb
-          name: configdir
-        - mountPath: /data/db
-          name: datadir
+        - name: copy-config
+          image: maruftuhin/mongodb-init
+          command:
+            - "sh"
+          args:
+            - "-c"
+            - |
+              set -e
+              set -x
+
+              cp /peer-finder /work-dir/peer-finder
+              cp /on-start.sh /work-dir/on-start.sh
+
+
+              if [ -f "/configdb-readonly/mongod.conf" ]; then
+                  cp /configdb-readonly/mongod.conf /data/configdb/mongod.conf
+              else
+                  touch /data/configdb/mongod.conf
+              fi
+
+              if [ -f "/keydir-readonly/key.txt" ]; then
+                  cp /keydir-readonly/key.txt /data/configdb/key.txt
+                  chmod 600 /data/configdb/key.txt
+              fi
+
+              if [ -f "/ca-readonly/tls.crt" ]; then
+                  cp /ca-readonly/tls.key /data/configdb/tls.key
+                  cp /ca-readonly/tls.crt /data/configdb/tls.crt
+              fi
+          volumeMounts:
+            - name: workdir
+              mountPath: /work-dir
+            - name: config
+              mountPath: /configdb-readonly
+            - name: configdir
+              mountPath: /data/configdb
+            - name: ca
+              mountPath: /ca-readonly
+#            - name: keydir
+#              mountPath: /keydir-readonly
+        - name: check
+          image: busybox
+          command:
+            - sh
+          args:
+            - -c
+            - |
+              set -e
+              set -x
+
+              ls -la /work-dir
+              ls -la /data/configdb
+          volumeMounts:
+            - mountPath: /work-dir
+              name: workdir
+            - mountPath: /data/configdb
+              name: configdir
+        - name: bootstrap
+          image: mongo:3.6
+          imagePullPolicy: Always
+          command:
+            - /work-dir/peer-finder
+          args:
+            - -on-start=/work-dir/on-start.sh
+            - -service=my-release-mongodb-replicaset
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: REPLICA_SET
+              value: rs0
+            - name: AUTH
+              value: "true"
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: my-release-mongodb-replicaset-admin
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: my-release-mongodb-replicaset-admin
+          volumeMounts:
+            - mountPath: /work-dir
+              name: workdir
+            - mountPath: /data/configdb
+              name: configdir
+            - mountPath: /data/db
+              name: datadir
       securityContext:
         fsGroup: 999
         runAsNonRoot: true
         runAsUser: 999
       terminationGracePeriodSeconds: 30
       volumes:
-      - name: config
-        configMap:
-          defaultMode: 420
-          name: my-release-mongodb-replicaset-mongodb
-      - name: keydir
-        secret:
-          defaultMode: 256
-          secretName: my-release-mongodb-replicaset-keyfile
-      - name: workdir
-        emptyDir: {}
-      - name: configdir
-        emptyDir: {}
+        - name: config
+          configMap:
+            defaultMode: 420
+            name: my-release-mongodb-replicaset-mongodb
+        - name: ca
+          secret:
+            defaultMode: 256
+            secretName: my-mg
+#        - name: keydir
+#          secret:
+#            defaultMode: 256
+#            secretName: my-release-mongodb-replicaset-keyfile
+        - name: workdir
+          emptyDir: {}
+        - name: configdir
+          emptyDir: {}
   volumeClaimTemplates:
-  - metadata:
-      name: datadir
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
+    - metadata:
+        name: datadir
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
