@@ -1,6 +1,8 @@
 FROM alpine:3.7
 
-RUN apk update && apk add bash openssl && wget -qO /peer-finder http://storage.googleapis.com/kubernetes-release/pets/peer-finder
+RUN apk update && apk add bash openssl
+
+RUN wget -qO /peer-finder http://storage.googleapis.com/kubernetes-release/pets/peer-finder
 
 COPY on-start.sh /
 

@@ -95,13 +95,18 @@ spec:
             - --port=27017
             - --bind_ip=0.0.0.0
             - --auth
-            - --sslMode=requireSSL
+            - --clusterAuthMode=x509
+            - --sslMode=preferSSL
             - --sslCAFile=/data/configdb/tls.crt
             - --sslPEMKeyFile=/work-dir/mongo.pem
           livenessProbe:
             exec:
               command:
+                # provide ssl for `requireSSL`
                 - mongo
+#                - --ssl
+#                - --sslCAFile=/data/configdb/tls.crt
+#                - --sslPEMKeyFile=/work-dir/mongo.pem
                 - --eval
                 - db.adminCommand('ping')
             failureThreshold: 3
@@ -117,6 +122,9 @@ spec:
             exec:
               command:
                 - mongo
+#                - --ssl
+#                - --sslCAFile=/data/configdb/tls.crt
+#                - --sslPEMKeyFile=/work-dir/mongo.pem
                 - --eval
                 - db.adminCommand('ping')
             failureThreshold: 3

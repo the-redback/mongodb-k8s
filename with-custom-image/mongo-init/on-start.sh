@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
+
 set -x
 
 # ref: https://github.com/kubernetes/charts/blob/master/stable/mongodb-replicaset/init/on-start.sh
 
+set -e pipefail
+
+port=27017
 replica_set="$REPLICA_SET"
 script_name=${0##*/}
+SECONDS=0
+timeout="${TIMEOUT:-900}"
 
 if [[ "$AUTH" == "true" ]]; then
   admin_user="$MONGO_INITDB_ROOT_USERNAME"
@@ -20,7 +26,7 @@ function log() {
   local msg="$@"
   local timestamp
   timestamp=$(date --iso-8601=ns)
-  echo "[$timestamp] [$script_name] $msg" >>/work-dir/log.txt
+  echo "[$timestamp] [$script_name] $msg" 2>&1 | tee -a /work-dir/log.txt 1>&2
 }
 
 function shutdown_mongo() {
@@ -52,9 +58,12 @@ if [ -f "$ca_crt" ]; then
   ca_key=/data/configdb/tls.key
   pem=/work-dir/mongo.pem
   ssl_args=(--ssl --sslCAFile "$ca_crt" --sslPEMKeyFile "$pem")
-  clusterAuthMode=(--clusterAuthMode x509 --sslMode requireSSL --sslCAFile "$ca_crt" --sslPEMKeyFile "$pem")
+  clusterAuthMode=(--clusterAuthMode x509 --sslMode preferSSL --sslCAFile "$ca_crt" --sslPEMKeyFile "$pem")
 
-  cat >openssl.cnf <<EOL
+# Move into /work-dir
+pushd /work-dir
+
+cat >openssl.cnf <<EOL
 [req]
 req_extensions = v3_req
 distinguished_name = req_distinguished_name
@@ -71,12 +80,12 @@ DNS.4 = localhost
 DNS.5 = 127.0.0.1
 EOL
 
-  # Generate the certs
-  openssl genrsa -out mongo.key 2048
-  openssl req -new -key mongo.key -out mongo.csr -subj "/CN=$my_hostname" -config openssl.cnf
-  openssl x509 -req -in mongo.csr \
-    -CA "$ca_crt" -CAkey "$ca_key" -CAcreateserial \
-    -out mongo.crt -days 3650 -extensions v3_req -extfile openssl.cnf
+    # Generate the certs
+    openssl genrsa -out mongo.key 2048
+    openssl req -new -key mongo.key -out mongo.csr -subj "/OU=MongoDB/CN=$my_hostname" -config openssl.cnf
+    openssl x509 -req -in mongo.csr \
+        -CA "$ca_crt" -CAkey "$ca_key" -CAcreateserial \
+        -out mongo.crt -days 3650 -extensions v3_req -extfile openssl.cnf
 
   rm mongo.csr
   cat mongo.crt mongo.key >$pem
@@ -88,8 +97,7 @@ log "Peers: ${peers[*]}"
 log "Starting a MongoDB instance..."
 log ">>>>>>>>>>>>"
 log "${clusterAuthMode[@]}"
-log `mongod --config /data/configdb/mongod.conf --dbpath=/data/db --replSet=$replica_set --port=27017 "${clusterAuthMode[@]}" --bind_ip=0.0.0.0`
-mongod --config /data/configdb/mongod.conf --dbpath=/data/db --replSet="$replica_set" --port=27017 "${clusterAuthMode[@]}" --bind_ip=0.0.0.0 >>/work-dir/log.txt 2>&1 &
+mongod --config /data/configdb/mongod.conf --dbpath=/data/db --replSet="$replica_set" --port=27017 "${clusterAuthMode[@]}" --bind_ip=0.0.0.0 2>&1 | tee -a /work-dir/log.txt 1>&2 &
 
 log "Waiting for MongoDB to be ready..."
 until mongo "${ssl_args[@]}" --eval "db.adminCommand('ping')"; do
